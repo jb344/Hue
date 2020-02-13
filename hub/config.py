@@ -1,8 +1,8 @@
 import os as __os
 
-# IP address of my Hue hub on the local network
+# IP address of my Hue heartbeat on the local network
 HUE_HUB_IP = "192.168.1.27"
-# Username of the privileged user we generated on the hub
+# Username of the privileged user we generated on the heartbeat
 HUE_HUB_USERNAME = "mqWIXtAw754p0v7YrkxGcLSwGCtL2dNhFCdBZRTo"
 # "Root" of all useful URL. In most of the commands (the exceptions are creating a username and getting basic
 # bridge information – Login Required) you’ll also include a username after this
