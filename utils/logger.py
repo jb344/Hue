@@ -3,7 +3,7 @@ import logging
 
 # Defined by me
 from .constants import *
-from .time import get_current_time
+from .time import get_current_date_time
 from .utils import test_and_mkdir
 
 
@@ -25,6 +25,7 @@ class StandardFilter(logging.Filter):
         return record.levelno != logging.ERROR and record.levelno != logging.CRITICAL
 
 
+# TODO Delete logs over a certain age, to prevent filling the disk with log files
 class Logger:
     LOGGER = None
 
@@ -43,10 +44,10 @@ class Logger:
 
             # Create a rotating file handler that rotates every 50MB, and stores only the last 5 logs, aka 250MB of data
             error_handler = RotatingFileHandler(
-                filename=LOGGING_PATH.joinpath(ERROR_LOG_FILE + "_{}.log".format(get_current_time())),
+                filename=LOGGING_PATH.joinpath(ERROR_LOG_FILE + "_{}.log".format(get_current_date_time())),
                 mode="w+", maxBytes=52430000, backupCount=5, encoding="ISO8859-1")
             standard_handler = RotatingFileHandler(
-                filename=LOGGING_PATH.joinpath(STANDARD_LOG_FILE + "_{}.log".format(get_current_time())),
+                filename=LOGGING_PATH.joinpath(STANDARD_LOG_FILE + "_{}.log".format(get_current_date_time())),
                 mode="w+", maxBytes=52430000, backupCount=5, encoding="ISO8859-1")
 
             # Specify the format of the log files
@@ -62,8 +63,8 @@ class Logger:
             logger.addHandler(error_handler)
             logger.addHandler(standard_handler)
 
-            # Override the default logging level of WARN, so we will get DEBUG and INFO messages out
-            logger.setLevel(logging.DEBUG)
+            # Override the default logging level of WARN, so we will get INFO messages out
+            logger.setLevel(logging.INFO)
 
             # Set the class field to our new logger
             Logger.LOGGER = logger

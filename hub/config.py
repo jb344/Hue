@@ -5,10 +5,16 @@ HUE_HUB_USERNAME = "mqWIXtAw754p0v7YrkxGcLSwGCtL2dNhFCdBZRTo"
 # "Root" of all useful URL. In most of the commands (the exceptions are creating a username and getting basic
 # bridge information – Login Required) you’ll also include a username after this
 HUE_HUB_LANDING = "http://" + HUE_HUB_IP + "/api"
-# The base useful URL, from here is where we can reach lights, sensors etc...
+# The base useful URL, from here is where we can reach light, sensors etc...
 HUE_HUB_BASE_URL = HUE_HUB_LANDING + "/" + HUE_HUB_USERNAME
 
-# All of the lights, sensors, routines etc... are all addressable using the URLs listed below
+# How often we should ping the hub, in second
+HUB_HEARTBEAT_INTERVAL_SECONDS = 120
+
+# Time period the lights should stay on for after the motion sensor is triggered
+STAY_ON_FOR_X_MINUTES = 5
+
+# All of the light, sensors, routines etc... are all addressable using the URLs listed below
 LIGHTS_URL = "/lights"
 GROUPS_URL = "/groups"
 CONFIG_URL = "/config"
@@ -16,6 +22,10 @@ SCHEDULES_URL = "/schedules"
 SCENES_URL = "/scenes"
 SENSORS_URL = "/sensors"
 RULES_URL = "/rules"
+
+# Accessory parameters
+STATE_URL = "/state"
+CONFIG_URL = "/config"
 
 # Unique names of all devices on my Hue hub
 MOTION_SENSOR_NAME = "Hallway motion sensor"

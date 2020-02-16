@@ -1,9 +1,16 @@
 import json
 import urllib.request
+from datetime import datetime
+from datetime import timedelta
+import threading
+from threading import Thread
+from time import sleep
 
 # Defined by me
 from hub.config import *
 from utils.constants import *
+from light.state import LightState
+from utils.time import get_current_time
 
 
 class Light:
@@ -12,125 +19,36 @@ class Light:
             Constructor
                 :param name:        Name of the light to get, such as "Living room lamp"
         """
-        self.ON = None                  # Boolean - Is the light on?
-        self.BRIGHTNESS = None          # Int - Level of brightness (0-255)
-        self.HUE = None                 # Int - Level of hue
-        self.SATURATION = None          # Int - Level of saturation
-        self.EFFECT = None              # String - TODO
-        self.XY = None                  # Float[] - TODO
-        self.COLOUR_MODE = None         # String - TODO
-        self.REACHABLE = None           # Boolean - Is the light reachable through the network/hub
-        self.ALERT = None               # String - Alerts on the light
-        self.TYPE = None                # String - Type of the light (full colour, ambient and white only, etc...)
-        self.NAME = None                # String - Name of the light (set by me)
-        self.MODEL_ID = None            # String - Model ID of the sensor (not unique)
-        self.UNIQUE_ID = None           # String - Unique ID (like a MAC address) TODO check what kind of ID this is
-        self.SW_VERSION = None          # String - Version of the sensors software
-        self.PRODUCT_NAME = None        # String - Manufacturer given product name
-        self.LOGGER = logger            # Logger object
+        self.CURRENT_STATE = None                   # LightState class object, containing the current state of the light
+        self.PREVIOUS_STATE = None                  # LightState class object, containing the previous state of the light so we can return to it
+        self.ID = None                              # ID of the light stored in the Hub (0+)
+        self.TYPE = None                            # String - Type of the light (full colour, ambient and white only, etc...)
+        self.NAME = name                            # String - Name of the light (set by me)
+        self.MODEL_ID = None                        # String - Model ID of the sensor (not unique)
+        self.UNIQUE_ID = None                       # String - Unique ID (like a MAC address)
+        self.SW_VERSION = None                      # String - Version of the sensors software
+        self.PRODUCT_NAME = None                    # String - Manufacturer given product name
+        self.LOGGER = logger                        # Logger object
+        self.LAST_ON_TIME = None                    # Time at which the light was last turned on
+        self.RESET_THREAD = None                    # Thread object for resetting the light to its previous state
+        self.RESET_TIME = None                      # Datetime object which contains the system time at which this light should switch off/return to previous state
+        self.RESET_TIME_MUTEX = threading.Lock()    # Mutex protecting the variable above, so if the sensor is triggered again within the "stay on"
 
-        # Get the state of the desired light
-        self.get_state(name)
-
-    def get_state(self, name):
-        """
-            Get state information from every light, the returned JSON looks like the following;
-                "1": {
-                    "state": {
-                        "on": true,
-                        "bri": 254,
-                        "hue": 41442,
-                        "sat": 75,
-                        "effect": "none",
-                        "xy": [
-                            0.3146,
-                            0.3303
-                        ],
-                        "ct": 156,
-                        "alert": "none",
-                        "colormode": "xy",
-                        "mode": "homeautomation",
-                        "reachable": true
-                    },
-                    "swupdate": {
-                        "state": "noupdates",
-                        "lastinstall": "2020-02-05T14:49:23"
-                    },
-                    "type": "Extended color light",
-                    "name": "Living room lamp",
-                    "modelid": "LCA001",
-                    "manufacturername": "Philips",
-                    "productname": "Hue color lamp",
-                    "capabilities": {
-                        "certified": true,
-                        "control": {
-                            "mindimlevel": 200,
-                            "maxlumen": 800,
-                            "colorgamuttype": "C",
-                            "colorgamut": [
-                                [
-                                    0.6915,
-                                    0.3083
-                                ],
-                                [
-                                    0.17,
-                                    0.7
-                                ],
-                                [
-                                    0.1532,
-                                    0.0475
-                                ]
-                            ],
-                            "ct": {
-                                "min": 153,
-                                "max": 500
-                            }
-                        },
-                        "streaming": {
-                            "renderer": true,
-                            "proxy": true
-                        }
-                    },light_fields.get("name")
-                    "config": {
-                        "archetype": "sultanbulb",
-                        "function": "mixed",
-                        "direction": "omnidirectional",
-                        "startup": {
-                            "mode": "safety",
-                            "configured": true
-                        }
-                    },
-                    "uniqueid": "00:17:88:01:08:31:d0:93-0b",
-                    "swversion": "1.65.9_hB3217DF",
-                    "swconfigid": "BD38721C",
-                    "productid": "Philips-LCA001-5-A19ECLv6"
-                },
-
-                :param name:        Name of the light to get the state of
-        """
+        # Get state information from every light, the returned JSON is structured like in example_state_information.json
         # Send a HTTP GET request to the hub from information about all the sensors
-        http_result = urllib.request.urlopen(HUE_HUB_BASE_URL + SENSORS_URL).read()
+        http_result = urllib.request.urlopen(url=HUE_HUB_BASE_URL + LIGHTS_URL).read()
         # The hub returns JSON, so we pass in a decoded byte array, so a string, to the JSON library
         json_result = json.loads(http_result.decode())
 
-        # Iterate over all the sensors until we find the motion sensor we are looking for
+        # Iterate over all the lights until we find the one we want
         for light_id, light_fields in json_result.items():
-            if name in light_fields.get("name"):
-                # Get state information
-                light_state = light_fields.get("state")
-                self.ON = light_state.get("on")
-                self.BRIGHTNESS = light_state.get("bri")
-                self.HUE = light_state.get("hue")
-                self.SATURATION = light_state.get("sat")
-                self.EFFECT = light_state.get("effect")
-                self.XY = light_state.get("xy")
-                self.COLOUR_MODE = light_state.get("colormode")
-                self.REACHABLE = light_state.get("reachable")
-                self.ALERT = light_state.get("alert")
+            if self.NAME in light_fields.get("name"):
+                # Get the current state information so we can return to this after a defined time interval
+                self.PREVIOUS_STATE = LightState(name=self.NAME)
 
                 # Get generic information
+                self.ID = light_id
                 self.TYPE = light_fields.get("type")
-                self.NAME = name
                 self.MODEL_ID = light_fields.get("modelid")
                 self.PRODUCT_NAME = light_fields.get("productname")
                 self.SW_VERSION = light_fields.get("swversion")
@@ -138,4 +56,90 @@ class Light:
 
                 break
 
-        return SUCCESS
+    def reset_light(self):
+        try:
+            # While the current time is less than the time we need to reset the light at, then we should sleep and wait for it to be True
+            delta = self.get_reset_time() - datetime.now()
+            while delta.seconds > 0:
+                delta = self.get_reset_time() - datetime.now()
+                sleep(1)
+
+            # Get the current state information so we can make a guess at whether it was the motion sensor that recently changed the status, or whether it was something else,
+            # if it was something else, then we probably don't want to go about resetting the lights
+            self.CURRENT_STATE = LightState(name=self.NAME)
+
+            # If the light is in the same state it was before we switched it on, then return it to that state
+            # TODO
+            if self.CURRENT_STATE == self.PREVIOUS_STATE:
+                resource_url = HUE_HUB_BASE_URL + LIGHTS_URL + "/" + self.ID + STATE_URL
+                # Return to the previous state
+                http_result = urllib.request.urlopen(url=urllib.request.Request(url=resource_url, method='PUT'), data=json.dumps(self.PREVIOUS_STATE.to_json()).encode()).read()
+
+                # Reset back to None to indicate there is no thread running anymore, and one should be created if needed
+                self.RESET_THREAD = None
+
+                if "success" in http_result.decode():
+                    self.LOGGER.info("Light {} was returned to its previous state {}".format(self.NAME, self.PREVIOUS_STATE.to_json()))
+                else:
+                    raise RuntimeError("Error returning light {} to its previous state {}".format(self.NAME, self.PREVIOUS_STATE.to_json()))
+        except Exception as err:
+            self.LOGGER.exception(err)
+            return ERROR
+
+    def get_reset_time(self):
+        with self.RESET_TIME_MUTEX:
+            return self.RESET_TIME
+
+    def set_reset_time(self, current_time):
+        with self.RESET_TIME_MUTEX:
+            self.RESET_TIME = current_time + timedelta(minutes=STAY_ON_FOR_X_MINUTES)
+
+    def switch_on(self) -> bool:
+        try:
+            """
+                Switch on this() light.
+                    :return:                -1 on FAILURE, 0 on SUCCESS
+            """
+            # Get the current state information so we can return to this after a defined time interval
+            self.CURRENT_STATE = LightState(name=self.NAME)
+
+            # If the light isn't currently on, then attempt to turn it on
+            if not self.CURRENT_STATE.ON:
+                self.PREVIOUS_STATE = self.CURRENT_STATE
+
+                # Based on the current time, decide which colour we want the lights
+                hour, minute, second = get_current_time()
+
+                # Between 10PM and 5AM
+                if 22 <= hour <= 5:
+                    with open("light/dimmed.json") as f:
+                        on_command = json.load(f)
+                # Between 5AM and 5PM
+                elif 5 <= hour <= 17:
+                    with open("light/energise.json") as f:
+                        on_command = json.load(f)
+                # Between 5PM and 10PM
+                elif 17 <= hour <= 22:
+                    with open("light/relaxed.json") as f:
+                        on_command = json.load(f)
+
+                resource_url = HUE_HUB_BASE_URL + LIGHTS_URL + "/" + self.ID + STATE_URL
+
+                # Switch the light on
+                self.LOGGER.info("Switching {} on, using command {}".format(self.NAME, on_command))
+                http_result = urllib.request.urlopen(url=urllib.request.Request(url=resource_url, method='PUT', data=json.dumps(on_command).encode())).read()
+
+                if "success" in http_result.decode():
+                    self.LAST_ON_TIME = datetime.now()
+                    self.set_reset_time(self.LAST_ON_TIME)
+
+                    if self.RESET_THREAD is None:
+                        self.RESET_THREAD = Thread(name="LIGHT_RESET_THREAD", target=self.reset_light)
+                        self.RESET_THREAD.start()
+                        self.LOGGER.info("{} was switched on at {}, reverting to previous state at {}, thread handling this {}".format(self.NAME, self.LAST_ON_TIME, self.get_reset_time(), self.RESET_THREAD.getName()))
+                    return SUCCESS
+                else:
+                    raise RuntimeError("Error switching on light using command {}".format(on_command))
+        except Exception as err:
+            self.LOGGER.exception(err)
+            return ERROR
