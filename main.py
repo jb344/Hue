@@ -14,6 +14,8 @@ def terminate():
     """
         Gracefully shutdown by attempting to gracefully kill all our owned threads, and joining them before killing main
     """
+    log.info("Shutting down gracefully...")
+
     if hub_heartbeat_thread.is_alive():
         hub.kill_thread()
         hub_heartbeat_thread.join()
