@@ -73,7 +73,7 @@ class Logger:
             return ERROR
 
     @staticmethod
-    def get_logger():
+    def get_logger() -> logging:
         if Logger.LOGGER is not None and Logger.LOGGER != ERROR:
             return Logger.LOGGER
         else:

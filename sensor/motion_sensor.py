@@ -9,6 +9,7 @@ from utils.constants import *
 from hub.hub import Hub
 from sensor.sensor import Sensor
 from light.light import Light
+from utils.time import get_current_time
 
 
 class MotionSensor(Sensor):
@@ -39,9 +40,9 @@ class MotionSensor(Sensor):
         self.BEDROOM_LAMP = Light(name=BEDROOM_LAMP, logger=logger)
         self.ALL_BEDROOM_LIGHTS = [self.BEDROOM_LAMP]
 
-    def interrogate(self):
+    def interrogate(self) -> int:
         """
-            Get state information from the sensor, the returned JSON has the structure as seen in example_state_information.json
+            Get state information from the sensor
                 :return:            -1 on FAILURE, 0 on SUCCESS
         """
         try:
@@ -49,7 +50,6 @@ class MotionSensor(Sensor):
             self.set_thread_state(RUNNING)
 
             # Keep this thread running if the Hub is still alive, and main hasn't told this thread to stop
-            #while Hub.get_alive(self.HUB) and self.get_thread_state() != KILL:
             while self.get_thread_state() != KILL:
                 # Send a HTTP GET request to the hub from information about all the sensors
                 http_result = urllib.request.urlopen(HUE_HUB_BASE_URL + SENSORS_URL).read()
@@ -59,34 +59,40 @@ class MotionSensor(Sensor):
                 # Iterate over all the sensors until we find the motion sensor we are looking for
                 for sensor_id, sensor_fields in json_result.items():
                     if self.MOTION_SENSOR_NAME in sensor_fields.get("name"):
-                        # Get state information
+                        # Get state information, and whether the sensor has detected anything
                         sensor_state = sensor_fields.get("state")
                         self.PRESENCE = sensor_state.get("presence")
 
-                        # Get configuration information
-                        sensor_config = sensor_fields.get("config")
-                        self.ON = sensor_config.get("on")
-                        self.BATTERY = sensor_config.get("battery")
-                        self.REACHABLE = sensor_config.get("reachable")
-                        self.ALERT = sensor_config.get("alert")
-                        self.SENSITIVITY = sensor_config.get("sensitivity")
-                        self.LED = sensor_config.get("ledindication")
+                        # Get the current time, so if it's 3AM we get the rest of the sensor information, rather doing it every iteration
+                        # and slowing the code down
+                        hour, minute, *_ = get_current_time(self.LOGGER)
 
-                        # Get generic information
-                        self.TYPE = sensor_fields.get("type")
-                        self.MODEL_ID = sensor_fields.get("modelid")
-                        self.PRODUCT_NAME = sensor_fields.get("productname")
-                        self.SW_VERSION = sensor_fields.get("swversion")
-                        self.UNIQUE_ID = sensor_fields.get("uniqueid")
+                        # If its 3AM then probe the rest of the details from the sensor
+                        if hour == 3 and minute == 0:
+                            # Get configuration information
+                            sensor_config = sensor_fields.get("config")
+                            self.ON = sensor_config.get("on")
+                            self.BATTERY = sensor_config.get("battery")
+                            self.REACHABLE = sensor_config.get("reachable")
+                            self.ALERT = sensor_config.get("alert")
+                            self.SENSITIVITY = sensor_config.get("sensitivity")
+                            self.LED = sensor_config.get("ledindication")
 
-                        self.LOGGER.debug("Motion sensor state;\n"
-                                          "\t\t\t\t\t\tpresence    {}\n".format(self.PRESENCE) +
-                                          "\t\t\t\t\t\ton          {}\n".format(self.ON) +
-                                          "\t\t\t\t\t\tbattery     {}\n".format(self.BATTERY) +
-                                          "\t\t\t\t\t\treachable   {}\n".format(self.REACHABLE) +
-                                          "\t\t\t\t\t\talert       {}\n".format(self.ALERT) +
-                                          "\t\t\t\t\t\tsensitivity {}\n".format(self.SENSITIVITY) +
-                                          "\t\t\t\t\t\tuid         {}".format(self.UNIQUE_ID))
+                            # Get generic information
+                            self.TYPE = sensor_fields.get("type")
+                            self.MODEL_ID = sensor_fields.get("modelid")
+                            self.PRODUCT_NAME = sensor_fields.get("productname")
+                            self.SW_VERSION = sensor_fields.get("swversion")
+                            self.UNIQUE_ID = sensor_fields.get("uniqueid")
+
+                            self.LOGGER.debug("Motion sensor state;\n"
+                                              "\t\t\t\t\t\tpresence    {}\n".format(self.PRESENCE) +
+                                              "\t\t\t\t\t\ton          {}\n".format(self.ON) +
+                                              "\t\t\t\t\t\tbattery     {}\n".format(self.BATTERY) +
+                                              "\t\t\t\t\t\treachable   {}\n".format(self.REACHABLE) +
+                                              "\t\t\t\t\t\talert       {}\n".format(self.ALERT) +
+                                              "\t\t\t\t\t\tsensitivity {}\n".format(self.SENSITIVITY) +
+                                              "\t\t\t\t\t\tuid         {}".format(self.UNIQUE_ID))
 
                         break
 
@@ -104,7 +110,10 @@ class MotionSensor(Sensor):
                     for each_light in self.ALL_HALLWAY_LIGHTS:
                         each_light.switch_on()
 
-                sleep(0.1)
+                # 100Hz refresh rate
+                sleep(0.01)
+
+            return SUCCESS
         except Exception as err:
             self.LOGGER.exception(err)
             return ERROR

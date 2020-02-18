@@ -8,7 +8,7 @@ HUE_HUB_LANDING = "http://" + HUE_HUB_IP + "/api"
 # The base useful URL, from here is where we can reach light, sensors etc...
 HUE_HUB_BASE_URL = HUE_HUB_LANDING + "/" + HUE_HUB_USERNAME
 
-# How often we should ping the hub, in second
+# How often we should ping the hub, in seconds
 HUB_HEARTBEAT_INTERVAL_SECONDS = 120
 
 # Time period the lights should stay on for after the motion sensor is triggered

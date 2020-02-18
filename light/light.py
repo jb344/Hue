@@ -18,6 +18,7 @@ class Light:
         """
             Constructor
                 :param name:        Name of the light to get, such as "Living room lamp"
+                :param logger:      Logger to log to
         """
         self.CURRENT_STATE = None                   # LightState class object, containing the current state of the light
         self.INITIAL_STATE = None                   # LightState class object, containing the state of the light as we "found" it, so we can return to this if necessary
@@ -57,12 +58,12 @@ class Light:
 
                 break
 
-    def switch_on(self) -> bool:
+    def switch_on(self) -> int:
+        """
+            Send the HTTP PUT request to the Hue hub in order to switch on the physical light represented by this Light object
+                :return:        -1 on FAILURE, 0 on SUCCESS
+        """
         try:
-            """
-                Switch on this() light.
-                    :return:                -1 on FAILURE, 0 on SUCCESS
-            """
             # Get the current state information so we can return to this after a defined time interval
             self.CURRENT_STATE = LightState(light_name=self.NAME)
 
@@ -73,31 +74,35 @@ class Light:
                 # Based on the current time, decide which colour we want the lights
                 hour, minute, second = get_current_time()
 
-                # Between 10PM and 5AM
+                # Between 10PM and 5AM we want a dimmed light
                 if 22 <= hour < 5:
                     with open("light/json/dimmed.json") as f:
                         on_command = json.load(f)
-                # Between 5AM and 5PM
+                # Between 5AM and 5PM we want a bright white
                 elif 5 <= hour < 17:
                     with open("light/json/energise.json") as f:
                         on_command = json.load(f)
-                # Between 5PM and 10PM
+                # Between 5PM and 10PM we want a nice relaxing orange
                 elif 17 <= hour < 22:
                     with open("light/json/relaxed.json") as f:
                         on_command = json.load(f)
 
+                # Store the state that we just set this() light to
                 self.MODIFIED_STATE = LightState(state_json=on_command, construct_from_json=True)
 
+                # URL of this() light
                 resource_url = HUE_HUB_BASE_URL + LIGHTS_URL + "/" + self.ID + STATE_URL
 
-                # Switch the light on
+                # Switch this() light on
                 self.LOGGER.debug("Switching {} on, using command {}".format(self.NAME, on_command))
                 http_result = urllib.request.urlopen(url=urllib.request.Request(url=resource_url, method='PUT', data=json.dumps(on_command).encode())).read()
 
+                # Check the returned json confirms success on our request
                 if "success" in http_result.decode():
                     self.LAST_ON_TIME = datetime.now()
                     self.set_reset_time(self.LAST_ON_TIME)
 
+                    # If we haven't already got a reset thread running for this() light, then start one, so after hub.config.STAY_ON_FOR_X_MINUTES minutes this() light will be reset
                     if self.RESET_THREAD is None:
                         self.RESET_THREAD = Thread(name="LIGHT_RESET_THREAD", target=self.reset_light)
                         self.RESET_THREAD.start()
@@ -109,9 +114,15 @@ class Light:
             self.LOGGER.exception(err)
             return ERROR
 
-    def reset_light(self):
+    def reset_light(self) -> int:
+        """
+            This function runs in its own thread, and switches off this() light after STAY_ON_FOR_X_MINUTES time has passed since switching it on.
+            It calculates the time delta in a loop, and when the delta is zero it sends a HTTP PUT request to the Hue hub to reset this() light, dependant on its
+            current state
+                :return:        -1 on FAILURE, 0 on SUCCESS
+        """
         try:
-            # While the current time is less than the time we need to reset the light at, then we should sleep and wait for it to be True
+            # While the current time is less than that we need to reset this() light at, then we should sleep and wait for it to be True
             delta = self.get_reset_time() - datetime.now()
             while delta.seconds > 0:
                 delta = self.get_reset_time() - datetime.now()
@@ -121,7 +132,7 @@ class Light:
             # if it was something else, then we probably don't want to go about resetting the lights
             self.CURRENT_STATE = LightState(light_name=self.NAME)
 
-            # If the light is in the same state to the one that we changed it to, then reset back to initial;
+            # If this() light is in the same state to the one that we changed it to, then reset back to initial;
             # Initial(OFF)      ->      Modified(RED)       ->      Current(RED)        ->      RESET TO INITIAL
             if self.MODIFIED_STATE == self.CURRENT_STATE:
                 resource_url = HUE_HUB_BASE_URL + LIGHTS_URL + "/" + self.ID + STATE_URL
@@ -145,14 +156,23 @@ class Light:
                 # Initial(OFF)      ->      Modified(RED)       ->      Current(OFF)        ->     DO NOTHING
                 self.LOGGER.debug("{} does not need any further action, as a third has put the light back to its initial state, so we don't have to".format(self.NAME))
 
+            return SUCCESS
         except Exception as err:
             self.LOGGER.exception(err)
             return ERROR
 
-    def get_reset_time(self):
+    def get_reset_time(self) -> datetime:
+        """
+            Get the datetime object in a thread-safe manner, detailing when reset behaviour should be run
+                :return:        datetime object telling us the reset time
+        """
         with self.RESET_TIME_MUTEX:
             return self.RESET_TIME
 
-    def set_reset_time(self, current_time):
+    def set_reset_time(self, current_time: datetime):
+        """
+            Set the reset time of this() light
+                :param current_time:        Current time that we should calculate the reset time from
+        """
         with self.RESET_TIME_MUTEX:
             self.RESET_TIME = current_time + timedelta(minutes=STAY_ON_FOR_X_MINUTES)

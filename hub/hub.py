@@ -46,13 +46,14 @@ class Hub:
                             self.set_alive(True)
                             ping_received = True
                             self.LOGGER.debug("Ping received {}".format(ping_result_str))
-                            sleep(HUB_HEARTBEAT_INTERVAL_SECONDS)
                             break
 
                     if not ping_received:
                         # If we hit this line, it's because we didn't receive an ICMP result from the Hub, and thus didn't go
                         # back round the loop
                         self.LOGGER.warning("Ping not received, attempting to continue anyway...")
+
+                sleep(HUB_HEARTBEAT_INTERVAL_SECONDS)
 
         except Exception as err:
             self.LOGGER.exception(err)
@@ -89,7 +90,7 @@ class Hub:
 
         return SUCCESS
 
-    def get_thread_state(self):
+    def get_thread_state(self) -> int:
         """
             Get the state of this thread
                 :return:                Thread state, either RUNNING, RECOVERABLE, or IRRECOVERABLE
