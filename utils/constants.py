@@ -15,7 +15,7 @@ IRRECOVERABLE = -1
 KILL = -1
 
 # Logging specific crap
-LOGGING_PATH = __Path("/home/jb/PycharmProjects/Hue/logs")
+LOGGING_PATH = __Path("./logs")
 ERROR_LOG_FILE = "JB_HUE_ERROR"
 STANDARD_LOG_FILE = "JB_HUE"
 LOG_FILE_FORMAT = __logging.Formatter("%(asctime)s, %(levelname)s, %(module)s.%(funcName)s()->%(lineno)d,       %(message)s")
