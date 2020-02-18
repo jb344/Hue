@@ -1,0 +1,13 @@
+{
+	"on": true,
+	"bri": 254,
+	"hue": 41442,
+	"sat": 75,
+	"effect": "none",
+	"xy": [
+		0.3146,
+		0.3303
+	],
+	"ct": 156,
+	"colormode": "xy"
+}
