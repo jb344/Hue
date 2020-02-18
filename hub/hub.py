@@ -9,7 +9,7 @@ from hub.config import *
 
 class Hub:
     def __init__(self, logger, found_at_ip: str):
-        self.THREAD_STATE = None                        # State flag of this thread, either RUNNING, RECOVERABLE, or IRRECOVERABLE
+        self.THREAD_STATE = RECOVERABLE                 # State flag of this thread, either RUNNING, RECOVERABLE, or IRRECOVERABLE
         self.THREAD_STATE_MUTEX = threading.Lock()      # Mutex protecting the above flag
         self.HUB_ALIVE = False                          # Is the hub alive?
         self.HUB_ALIVE_MUTEX = threading.Lock()         # Mutex protecting the above flag

@@ -20,7 +20,7 @@ class MotionSensor(Sensor):
                 :param connected_to_hub:        hub.Hub class object that the desired MotionSensor is connected to
         """
         self.LOGGER = logger                            # Logger object
-        self.THREAD_STATE = None                        # State flag of this thread, either RUNNING, RECOVERABLE, or IRRECOVERABLE
+        self.THREAD_STATE = RECOVERABLE                 # State flag of this thread, either RUNNING, RECOVERABLE, or IRRECOVERABLE
         self.THREAD_STATE_MUTEX = threading.Lock()      # Mutex protecting the above flag
         self.MOTION_SENSOR_NAME = motion_sensor_name    # Name of the motion sensor we are looking to interrogate
         self.HUB = connected_to_hub                     # The Hue hub object that the sensor is connected to

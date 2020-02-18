@@ -20,7 +20,8 @@ class Light:
                 :param name:        Name of the light to get, such as "Living room lamp"
         """
         self.CURRENT_STATE = None                   # LightState class object, containing the current state of the light
-        self.PREVIOUS_STATE = None                  # LightState class object, containing the previous state of the light so we can return to it
+        self.INITIAL_STATE = None                   # LightState class object, containing the state of the light as we "found" it, so we can return to this if necessary
+        self.MODIFIED_STATE = None                  # LightState class object, containing the state of the light as we have set it
         self.ID = None                              # ID of the light stored in the Hub (0+)
         self.TYPE = None                            # String - Type of the light (full colour, ambient and white only, etc...)
         self.NAME = name                            # String - Name of the light (set by me)
@@ -44,7 +45,7 @@ class Light:
         for light_id, light_fields in json_result.items():
             if self.NAME in light_fields.get("name"):
                 # Get the current state information so we can return to this after a defined time interval
-                self.PREVIOUS_STATE = LightState(name=self.NAME)
+                self.INITIAL_STATE = LightState(light_name=self.NAME)
 
                 # Get generic information
                 self.ID = light_id
@@ -56,44 +57,6 @@ class Light:
 
                 break
 
-    def reset_light(self):
-        try:
-            # While the current time is less than the time we need to reset the light at, then we should sleep and wait for it to be True
-            delta = self.get_reset_time() - datetime.now()
-            while delta.seconds > 0:
-                delta = self.get_reset_time() - datetime.now()
-                sleep(1)
-
-            # Get the current state information so we can make a guess at whether it was the motion sensor that recently changed the status, or whether it was something else,
-            # if it was something else, then we probably don't want to go about resetting the lights
-            self.CURRENT_STATE = LightState(name=self.NAME)
-
-            # If the light is in the same state it was before we switched it on, then return it to that state
-            # TODO
-            if self.CURRENT_STATE == self.PREVIOUS_STATE:
-                resource_url = HUE_HUB_BASE_URL + LIGHTS_URL + "/" + self.ID + STATE_URL
-                # Return to the previous state
-                http_result = urllib.request.urlopen(url=urllib.request.Request(url=resource_url, method='PUT'), data=json.dumps(self.PREVIOUS_STATE.to_json()).encode()).read()
-
-                # Reset back to None to indicate there is no thread running anymore, and one should be created if needed
-                self.RESET_THREAD = None
-
-                if "success" in http_result.decode():
-                    self.LOGGER.info("Light {} was returned to its previous state {}".format(self.NAME, self.PREVIOUS_STATE.to_json()))
-                else:
-                    raise RuntimeError("Error returning light {} to its previous state {}".format(self.NAME, self.PREVIOUS_STATE.to_json()))
-        except Exception as err:
-            self.LOGGER.exception(err)
-            return ERROR
-
-    def get_reset_time(self):
-        with self.RESET_TIME_MUTEX:
-            return self.RESET_TIME
-
-    def set_reset_time(self, current_time):
-        with self.RESET_TIME_MUTEX:
-            self.RESET_TIME = current_time + timedelta(minutes=STAY_ON_FOR_X_MINUTES)
-
     def switch_on(self) -> bool:
         try:
             """
@@ -101,32 +64,34 @@ class Light:
                     :return:                -1 on FAILURE, 0 on SUCCESS
             """
             # Get the current state information so we can return to this after a defined time interval
-            self.CURRENT_STATE = LightState(name=self.NAME)
+            self.CURRENT_STATE = LightState(light_name=self.NAME)
 
             # If the light isn't currently on, then attempt to turn it on
             if not self.CURRENT_STATE.ON:
-                self.PREVIOUS_STATE = self.CURRENT_STATE
+                self.INITIAL_STATE = self.CURRENT_STATE
 
                 # Based on the current time, decide which colour we want the lights
                 hour, minute, second = get_current_time()
 
                 # Between 10PM and 5AM
-                if 22 <= hour <= 5:
-                    with open("light/dimmed.json") as f:
+                if 22 <= hour < 5:
+                    with open("light/json/dimmed.json") as f:
                         on_command = json.load(f)
                 # Between 5AM and 5PM
-                elif 5 <= hour <= 17:
-                    with open("light/energise.json") as f:
+                elif 5 <= hour < 17:
+                    with open("light/json/energise.json") as f:
                         on_command = json.load(f)
                 # Between 5PM and 10PM
-                elif 17 <= hour <= 22:
-                    with open("light/relaxed.json") as f:
+                elif 17 <= hour < 22:
+                    with open("light/json/relaxed.json") as f:
                         on_command = json.load(f)
+
+                self.MODIFIED_STATE = LightState(state_json=on_command, construct_from_json=True)
 
                 resource_url = HUE_HUB_BASE_URL + LIGHTS_URL + "/" + self.ID + STATE_URL
 
                 # Switch the light on
-                self.LOGGER.info("Switching {} on, using command {}".format(self.NAME, on_command))
+                self.LOGGER.debug("Switching {} on, using command {}".format(self.NAME, on_command))
                 http_result = urllib.request.urlopen(url=urllib.request.Request(url=resource_url, method='PUT', data=json.dumps(on_command).encode())).read()
 
                 if "success" in http_result.decode():
@@ -143,3 +108,51 @@ class Light:
         except Exception as err:
             self.LOGGER.exception(err)
             return ERROR
+
+    def reset_light(self):
+        try:
+            # While the current time is less than the time we need to reset the light at, then we should sleep and wait for it to be True
+            delta = self.get_reset_time() - datetime.now()
+            while delta.seconds > 0:
+                delta = self.get_reset_time() - datetime.now()
+                sleep(1)
+
+            # Get the current state information so we can make a guess at whether it was the motion sensor that recently changed the status, or whether it was something else,
+            # if it was something else, then we probably don't want to go about resetting the lights
+            self.CURRENT_STATE = LightState(light_name=self.NAME)
+
+            # If the light is in the same state to the one that we changed it to, then reset back to initial;
+            # Initial(OFF)      ->      Modified(RED)       ->      Current(RED)        ->      RESET TO INITIAL
+            if self.MODIFIED_STATE == self.CURRENT_STATE:
+                resource_url = HUE_HUB_BASE_URL + LIGHTS_URL + "/" + self.ID + STATE_URL
+                # Return to the previous state
+                http_result = urllib.request.urlopen(url=urllib.request.Request(url=resource_url, method='PUT'),
+                                                     data=json.dumps(self.INITIAL_STATE.to_json()).encode()).read()
+
+                # Reset back to None to indicate there is no thread running anymore, and one should be created if needed
+                self.RESET_THREAD = None
+
+                if "success" in http_result.decode():
+                    self.LOGGER.debug("{} was returned to its initial state {}".format(self.NAME, self.INITIAL_STATE.to_json()))
+                else:
+                    raise RuntimeError("Error returning light {} to its initial state {}".format(self.NAME, self.INITIAL_STATE.to_json()))
+            elif not self.CURRENT_STATE == self.MODIFIED_STATE and not self.CURRENT_STATE == self.INITIAL_STATE:
+                # If the light is in a different state to both initial and the modified, then a third party has overridden the state we generated, so do nothing;
+                # Initial(OFF)      ->      Modified(RED)       ->      Current(BLUE)        ->     DO NOTHING
+                self.LOGGER.debug("{} does not need any further action, as a third party has changed the state of the light since we have, thus overriding our setting".format(self.NAME))
+            elif self.CURRENT_STATE == self.INITIAL_STATE:
+                # If the light has already been put back to its initial state by a third party, then do nothing;
+                # Initial(OFF)      ->      Modified(RED)       ->      Current(OFF)        ->     DO NOTHING
+                self.LOGGER.debug("{} does not need any further action, as a third has put the light back to its initial state, so we don't have to".format(self.NAME))
+
+        except Exception as err:
+            self.LOGGER.exception(err)
+            return ERROR
+
+    def get_reset_time(self):
+        with self.RESET_TIME_MUTEX:
+            return self.RESET_TIME
+
+    def set_reset_time(self, current_time):
+        with self.RESET_TIME_MUTEX:
+            self.RESET_TIME = current_time + timedelta(minutes=STAY_ON_FOR_X_MINUTES)

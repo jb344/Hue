@@ -54,8 +54,7 @@ if __name__ == "__main__":
         motion_detected_thread.start()
 
         # Wait for the threads to both hit the RUNNING state
-        while hub.get_thread_state() != RUNNING and motion_sensor.get_thread_state() != RUNNING:
-            time.sleep(1)
+        time.sleep(5)
 
         while system_state == RUNNING:
             system_state = hub.get_thread_state() | motion_sensor.get_thread_state()
