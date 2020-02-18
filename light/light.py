@@ -75,7 +75,7 @@ class Light:
                 hour, minute, second = get_current_time()
 
                 # Between 10PM and 5AM we want a dimmed light
-                if 22 <= hour < 5:
+                if hour >= 22 or hour < 5:
                     with open("light/json/dimmed.json") as f:
                         on_command = json.load(f)
                 # Between 5AM and 5PM we want a bright white
