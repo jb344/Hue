@@ -46,7 +46,7 @@ class Light:
         for light_id, light_fields in json_result.items():
             if self.NAME in light_fields.get("name"):
                 # Get the current state information so we can return to this after a defined time interval
-                self.INITIAL_STATE = LightState(light_name=self.NAME)
+                self.INITIAL_STATE = LightState(logger=self.LOGGER, light_name=self.NAME)
 
                 # Get generic information
                 self.ID = light_id
@@ -65,7 +65,7 @@ class Light:
         """
         try:
             # Get the current state information so we can return to this after a defined time interval
-            self.CURRENT_STATE = LightState(light_name=self.NAME)
+            self.CURRENT_STATE = LightState(logger=self.LOGGER, light_name=self.NAME)
 
             # If the light isn't currently on, then attempt to turn it on
             if not self.CURRENT_STATE.ON:
@@ -88,7 +88,7 @@ class Light:
                         on_command = json.load(f)
 
                 # Store the state that we just set this() light to
-                self.MODIFIED_STATE = LightState(state_json=on_command, construct_from_json=True)
+                self.MODIFIED_STATE = LightState(logger=self.LOGGER, state_json=on_command, construct_from_json=True)
 
                 # URL of this() light
                 resource_url = HUE_HUB_BASE_URL + LIGHTS_URL + "/" + self.ID + STATE_URL
@@ -130,7 +130,7 @@ class Light:
 
             # Get the current state information so we can make a guess at whether it was the motion sensor that recently changed the status, or whether it was something else,
             # if it was something else, then we probably don't want to go about resetting the lights
-            self.CURRENT_STATE = LightState(light_name=self.NAME)
+            self.CURRENT_STATE = LightState(logger=self.LOGGER, light_name=self.NAME)
 
             # If this() light is in the same state to the one that we changed it to, then reset back to initial;
             # Initial(OFF)      ->      Modified(RED)       ->      Current(RED)        ->      RESET TO INITIAL
