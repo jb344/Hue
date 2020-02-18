@@ -1,0 +1,34 @@
+import datetime
+
+# Defined by me
+from .constants import *
+
+
+def get_current_date_time(log=None):
+    """
+        Get the current date/time, in the format; 120220_183800
+            :param log      Logger to attempt to use, this can be None
+            :return:        The current date/time, in the format; 120220_183800, or None
+    """
+    now = None
+    try:
+        now = datetime.datetime.now().strftime("%d%m%y_%H%M%S")
+    except Exception as err:
+        if log is not None and log != ERROR:
+            log.exception(err)
+        else:
+            print(err)
+    return now
+
+
+def get_current_time(log=None):
+    hour, minute, second = None, None, None
+    try:
+        time_now = datetime.datetime.now()
+        hour, minute, second = time_now.hour, time_now.minute, time_now.second
+    except Exception as err:
+        if log is not None and log != ERROR:
+            log.exception(err)
+        else:
+            print(err)
+    return hour, minute, second
