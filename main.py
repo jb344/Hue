@@ -53,11 +53,9 @@ if __name__ == "__main__":
         motion_detected_thread = Thread(name="motion_detected_thread", target=motion_sensor.interrogate)
         motion_detected_thread.start()
 
-        # Wait for the threads to both hit the RUNNING state
-        time.sleep(5)
-
         while system_state == RUNNING:
-            system_state = hub.get_thread_state() | motion_sensor.get_thread_state()
+            # TODO need a better method of determining if the system is still alive
+            #system_state = hub.get_thread_state() | motion_sensor.get_thread_state()
             time.sleep(10)
 
         # Join the threads, so we don't end up trashing them forcefully
