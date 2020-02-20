@@ -22,42 +22,35 @@ class Hub:
             set our status to RECOVERABLE in the hopes the main() thread will see it, and attempt to restart us.
         """
         try:
-            self.LOGGER.info("Hue hub heartbeat thread started , with interval {}s, IP {}".format(HUB_HEARTBEAT_INTERVAL_SECONDS, self.HUE_HUB_IP))
             self.set_thread_state(RUNNING)
+            self.LOGGER.info("Hue hub heartbeat thread started , with interval {}s, IP {}".format(HUB_HEARTBEAT_INTERVAL_SECONDS, self.HUE_HUB_IP))
 
             # The thread state flag can be set to KILL by the main thread, to signify this thread should be terminated
             while self.get_thread_state() != KILL:
-                ping_received = False
                 # Ping the hub once and return the stdout and stderr of the process to us
                 process_result = subprocess.run(args=["ping", self.HUE_HUB_IP, "-c", "1"],
                                                 stderr=subprocess.PIPE,
                                                 stdout=subprocess.PIPE)
 
-                # If the return code is -1 then raise an error
-                if process_result.check_returncode() == ERROR:
-                    raise ValueError(process_result.stderr)
+                # According to the man page, ping returns 0 if at least one response was heard
+                if process_result.check_returncode() == SUCCESS:
+                    # Set the hub alive flag to true, then sleep for x seconds before checking again
+                    self.set_alive(True)
+                    self.LOGGER.debug("Ping received")
+                # The transmission was successful but no responses were received
+                elif process_result.check_returncode() == 2:
+                    self.LOGGER.warning("Ping not received, attempting to continue anyway...")
+                    self.set_alive(False)
                 else:
-                    # stdout is returned as raw bytes, so decode it into a string object
-                    ping_result_str = process_result.stdout.decode()
-                    for lines in ping_result_str.splitlines():
-                        # Check the ping statistics and if it contains the text "1 received" it means a reply was found
-                        if "1 received" in lines:
-                            # Set the hub alive flag to true, then sleep for x seconds before checking again
-                            self.set_alive(True)
-                            ping_received = True
-                            self.LOGGER.debug("Ping received {}".format(ping_result_str))
-                            break
-
-                    if not ping_received:
-                        # If we hit this line, it's because we didn't receive an ICMP result from the Hub, and thus didn't go
-                        # back round the loop
-                        self.LOGGER.warning("Ping not received, attempting to continue anyway...")
+                    raise RuntimeError("Ping returned error code {}".format(process_result.check_returncode()))
 
                 sleep(HUB_HEARTBEAT_INTERVAL_SECONDS)
 
         except Exception as err:
             self.LOGGER.exception(err)
             self.set_alive(False)
+            self.set_thread_state(RECOVERABLE)
+            return ERROR
 
     def set_alive(self, value: bool) -> int:
         """

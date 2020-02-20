@@ -1,5 +1,6 @@
 import time
 import logging
+import signal
 from threading import Thread
 
 # Defined by me
@@ -10,7 +11,18 @@ from hub.hub import Hub
 from sensor.motion_sensor import MotionSensor
 
 
-def terminate():
+class Killer:
+    kill = False
+
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+    def exit_gracefully(self, signum, frame):
+        self.kill = True
+
+
+def clean_up():
     """
         Gracefully shutdown by attempting to gracefully kill all our owned threads, and joining them before killing main
     """
@@ -37,6 +49,9 @@ if __name__ == "__main__":
         Logger.configure_log(__name__)
         log = Logger.get_logger()
 
+        # Killer object that detects a SIGINT or SIGTERM
+        killer = Killer()
+
         # Check that the logs were created before getting excited and initialising the system
         if log != ERROR:
             system_state = RUNNING
@@ -55,13 +70,37 @@ if __name__ == "__main__":
         motion_detected_thread = Thread(name="motion_detected_thread", target=motion_sensor.interrogate)
         motion_detected_thread.start()
 
-        while system_state == RUNNING:
-            # TODO need a better method of determining if the system is still alive
-            #system_state = hub.get_thread_state() | motion_sensor.get_thread_state()
+        # Allow the other threads to spawn
+        time.sleep(10)
+
+        # While a SIGINT or SIGTERM hasn't been received
+        while not killer.kill:
+            # If its recoverable then try to re launch it
+            if hub.get_thread_state() == RECOVERABLE:
+                # If its still alive then kill it
+                if hub_heartbeat_thread.is_alive():
+                    hub.kill_thread()
+                    hub_heartbeat_thread.join()
+
+                # Restart it
+                hub_heartbeat_thread = Thread(name="hub_heartbeat_thread", target=hub.heartbeat)
+                hub_heartbeat_thread.start()
+
+            # If its recoverable then try to re launch it
+            if motion_sensor.get_thread_state() == RECOVERABLE:
+                # If its still alive then kill it
+                if motion_detected_thread.is_alive():
+                    motion_sensor.kill_thread()
+                    motion_detected_thread.join()
+
+                # Restart it
+                motion_detected_thread = Thread(name="motion_detected_thread", target=motion_sensor.interrogate)
+                motion_detected_thread.start()
+
             time.sleep(10)
 
         # Join the threads, so we don't end up trashing them forcefully
-        terminate()
+        clean_up()
 
     except Exception as e:
         if log is not None and log != ERROR:

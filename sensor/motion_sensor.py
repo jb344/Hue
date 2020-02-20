@@ -4,6 +4,8 @@ import threading
 from time import sleep
 
 # Defined by me
+from urllib.error import URLError
+
 from hub.config import *
 from utils.constants import *
 from hub.hub import Hub
@@ -46,13 +48,20 @@ class MotionSensor(Sensor):
                 :return:            -1 on FAILURE, 0 on SUCCESS
         """
         try:
-            self.LOGGER.info("Motion sensor interrogation thread started on {}".format(self.MOTION_SENSOR_NAME))
             self.set_thread_state(RUNNING)
+            self.LOGGER.info("Motion sensor interrogation thread started on {}".format(self.MOTION_SENSOR_NAME))
 
             # Keep this thread running if the Hub is still alive, and main hasn't told this thread to stop
             while self.get_thread_state() != KILL:
-                # Send a HTTP GET request to the hub from information about all the sensors
-                http_result = urllib.request.urlopen(HUE_HUB_BASE_URL + SENSORS_URL).read()
+                try:
+                    # Send a HTTP GET request to the hub from information about all the sensors
+                    http_result = urllib.request.urlopen(HUE_HUB_BASE_URL + SENSORS_URL).read()
+                except URLError:
+                    # Catch a 101 (Network is unreachable), because every night at 2AM the network goes down
+                    if URLError.errno == 101:
+                        sleep(10)
+                        continue
+
                 # The hub returns JSON, so we pass in a decoded byte array, so a string, to the JSON library
                 json_result = json.loads(http_result.decode())
 
@@ -116,6 +125,7 @@ class MotionSensor(Sensor):
             return SUCCESS
         except Exception as err:
             self.LOGGER.exception(err)
+            self.set_thread_state(RECOVERABLE)
             return ERROR
 
     def set_thread_state(self, state: int):
