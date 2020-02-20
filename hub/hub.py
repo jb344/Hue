@@ -33,12 +33,12 @@ class Hub:
                                                 stdout=subprocess.PIPE)
 
                 # According to the man page, ping returns 0 if at least one response was heard
-                if process_result.check_returncode() == SUCCESS:
+                if process_result.returncode == SUCCESS:
                     # Set the hub alive flag to true, then sleep for x seconds before checking again
                     self.set_alive(True)
                     self.LOGGER.debug("Ping received")
                 # The transmission was successful but no responses were received
-                elif process_result.check_returncode() == 2:
+                elif process_result.returncode == 2:
                     self.LOGGER.warning("Ping not received, attempting to continue anyway...")
                     self.set_alive(False)
                 else:
