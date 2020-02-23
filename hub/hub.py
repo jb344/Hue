@@ -23,7 +23,7 @@ class Hub:
         """
         try:
             self.set_thread_state(RUNNING)
-            self.LOGGER.info("Hue hub heartbeat thread started , with interval {}s, IP {}".format(HUB_HEARTBEAT_INTERVAL_SECONDS, self.HUE_HUB_IP))
+            self.LOGGER.info("Hue hub heartbeat thread started, with interval {}s, IP {}".format(HUB_HEARTBEAT_INTERVAL_SECONDS, self.HUE_HUB_IP))
 
             # The thread state flag can be set to KILL by the main thread, to signify this thread should be terminated
             while self.get_thread_state() != KILL:
