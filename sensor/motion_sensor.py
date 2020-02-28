@@ -39,8 +39,8 @@ class MotionSensor(Sensor):
         self.ALL_HALLWAY_LIGHTS = [self.HALLWAY_SPOT_ONE, self.HALLWAY_SPOT_TWO]
 
         # Bedroom lights
-        #self.BEDROOM_LAMP = Light(name=BEDROOM_LAMP, logger=logger)
-        #self.ALL_BEDROOM_LIGHTS = [self.BEDROOM_LAMP]
+        self.BEDROOM_LAMP = Light(name=BEDROOM_LAMP, logger=logger)
+        self.ALL_BEDROOM_LIGHTS = []
 
     def interrogate(self) -> int:
         """
