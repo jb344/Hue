@@ -56,74 +56,74 @@ class MotionSensor(Sensor):
                 try:
                     # Send a HTTP GET request to the hub from information about all the sensors
                     http_result = urllib.request.urlopen(HUE_HUB_BASE_URL + SENSORS_URL).read()
+
+                    if http_result is not None:
+                        # The hub returns JSON, so we pass in a decoded byte array, so a string, to the JSON library
+                        json_result = json.loads(http_result.decode())
+
+                        # Iterate over all the sensors until we find the motion sensor we are looking for
+                        for sensor_id, sensor_fields in json_result.items():
+                            if self.MOTION_SENSOR_NAME in sensor_fields.get("name"):
+                                # Get state information, and whether the sensor has detected anything
+                                sensor_state = sensor_fields.get("state")
+                                self.PRESENCE = sensor_state.get("presence")
+
+                                # Get the current time, so if it's 3AM we get the rest of the sensor information, rather doing it every iteration
+                                # and slowing the code down
+                                hour, minute, *_ = get_current_time(self.LOGGER)
+
+                                # If its 3AM then probe the rest of the details from the sensor
+                                if hour == 3 and minute == 0:
+                                    # Get configuration information
+                                    sensor_config = sensor_fields.get("config")
+                                    self.ON = sensor_config.get("on")
+                                    self.BATTERY = sensor_config.get("battery")
+                                    self.REACHABLE = sensor_config.get("reachable")
+                                    self.ALERT = sensor_config.get("alert")
+                                    self.SENSITIVITY = sensor_config.get("sensitivity")
+                                    self.LED = sensor_config.get("ledindication")
+
+                                    # Get generic information
+                                    self.TYPE = sensor_fields.get("type")
+                                    self.MODEL_ID = sensor_fields.get("modelid")
+                                    self.PRODUCT_NAME = sensor_fields.get("productname")
+                                    self.SW_VERSION = sensor_fields.get("swversion")
+                                    self.UNIQUE_ID = sensor_fields.get("uniqueid")
+
+                                    self.LOGGER.debug("Motion sensor state;\n"
+                                                      "\t\t\t\t\t\tpresence    {}\n".format(self.PRESENCE) +
+                                                      "\t\t\t\t\t\ton          {}\n".format(self.ON) +
+                                                      "\t\t\t\t\t\tbattery     {}\n".format(self.BATTERY) +
+                                                      "\t\t\t\t\t\treachable   {}\n".format(self.REACHABLE) +
+                                                      "\t\t\t\t\t\talert       {}\n".format(self.ALERT) +
+                                                      "\t\t\t\t\t\tsensitivity {}\n".format(self.SENSITIVITY) +
+                                                      "\t\t\t\t\t\tuid         {}".format(self.UNIQUE_ID))
+
+                                break
+
+                        # If presence is detected then attempt to switch on all the necessary lights if they aren't already
+                        if self.PRESENCE:
+                            # Iterate over the bedroom lights and if they aren't on, switch them on
+                            for each_light in self.ALL_BEDROOM_LIGHTS:
+                                each_light.switch_on()
+
+                            # Iterate over the lounge lights and if they aren't on, switch them on
+                            for each_light in self.ALL_LOUNGE_LIGHTS:
+                                each_light.switch_on()
+
+                            # Iterate over the hallway lights and if they aren't on, switch them on
+                            for each_light in self.ALL_HALLWAY_LIGHTS:
+                                each_light.switch_on()
+
+                    # 100Hz refresh rate
+                    sleep(0.01)
                 except URLError as err:
-                    # Catch a 101 (Network is unreachable), because every night at 2AM the network goes down
-                    if URLError.errno == 101:
-                        sleep(10)
+                    # Catch a 101 (Network is unreachable) and 113 (No route to host), because every night at 2AM the network goes down
+                    if URLError.errno == 101 or URLError.errno == 113:
+                        sleep(60)
                         continue
                     else:
                         raise OSError(err)
-
-                if http_result is not None:
-                    # The hub returns JSON, so we pass in a decoded byte array, so a string, to the JSON library
-                    json_result = json.loads(http_result.decode())
-
-                    # Iterate over all the sensors until we find the motion sensor we are looking for
-                    for sensor_id, sensor_fields in json_result.items():
-                        if self.MOTION_SENSOR_NAME in sensor_fields.get("name"):
-                            # Get state information, and whether the sensor has detected anything
-                            sensor_state = sensor_fields.get("state")
-                            self.PRESENCE = sensor_state.get("presence")
-
-                            # Get the current time, so if it's 3AM we get the rest of the sensor information, rather doing it every iteration
-                            # and slowing the code down
-                            hour, minute, *_ = get_current_time(self.LOGGER)
-
-                            # If its 3AM then probe the rest of the details from the sensor
-                            if hour == 3 and minute == 0:
-                                # Get configuration information
-                                sensor_config = sensor_fields.get("config")
-                                self.ON = sensor_config.get("on")
-                                self.BATTERY = sensor_config.get("battery")
-                                self.REACHABLE = sensor_config.get("reachable")
-                                self.ALERT = sensor_config.get("alert")
-                                self.SENSITIVITY = sensor_config.get("sensitivity")
-                                self.LED = sensor_config.get("ledindication")
-
-                                # Get generic information
-                                self.TYPE = sensor_fields.get("type")
-                                self.MODEL_ID = sensor_fields.get("modelid")
-                                self.PRODUCT_NAME = sensor_fields.get("productname")
-                                self.SW_VERSION = sensor_fields.get("swversion")
-                                self.UNIQUE_ID = sensor_fields.get("uniqueid")
-
-                                self.LOGGER.debug("Motion sensor state;\n"
-                                                  "\t\t\t\t\t\tpresence    {}\n".format(self.PRESENCE) +
-                                                  "\t\t\t\t\t\ton          {}\n".format(self.ON) +
-                                                  "\t\t\t\t\t\tbattery     {}\n".format(self.BATTERY) +
-                                                  "\t\t\t\t\t\treachable   {}\n".format(self.REACHABLE) +
-                                                  "\t\t\t\t\t\talert       {}\n".format(self.ALERT) +
-                                                  "\t\t\t\t\t\tsensitivity {}\n".format(self.SENSITIVITY) +
-                                                  "\t\t\t\t\t\tuid         {}".format(self.UNIQUE_ID))
-
-                            break
-
-                    # If presence is detected then attempt to switch on all the necessary lights if they aren't already
-                    if self.PRESENCE:
-                        # Iterate over the bedroom lights and if they aren't on, switch them on
-                        for each_light in self.ALL_BEDROOM_LIGHTS:
-                            each_light.switch_on()
-
-                        # Iterate over the lounge lights and if they aren't on, switch them on
-                        for each_light in self.ALL_LOUNGE_LIGHTS:
-                            each_light.switch_on()
-
-                        # Iterate over the hallway lights and if they aren't on, switch them on
-                        for each_light in self.ALL_HALLWAY_LIGHTS:
-                            each_light.switch_on()
-
-                # 100Hz refresh rate
-                sleep(0.01)
 
             return SUCCESS
         except Exception as err:
