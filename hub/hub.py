@@ -95,4 +95,4 @@ class Hub:
         """
             Kill the thread
         """
-        self.THREAD_STATE = KILL
+        self.set_thread_state(KILL)

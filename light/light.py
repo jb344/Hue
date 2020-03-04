@@ -76,15 +76,15 @@ class Light:
 
                 # Between 10PM and 5AM we want a dimmed light
                 if hour >= 22 or hour < 5:
-                    with open("light/json/dimmed.json") as f:
+                    with open("/home/pi/Hue/light/json/dimmed.json") as f:
                         on_command = json.load(f)
                 # Between 5AM and 5PM we want a bright white
                 elif 5 <= hour < 17:
-                    with open("light/json/energise.json") as f:
+                    with open("/home/pi/Hue/light/json/energise.json") as f:
                         on_command = json.load(f)
                 # Between 5PM and 10PM we want a nice relaxing orange
                 elif 17 <= hour < 22:
-                    with open("light/json/relaxed.json") as f:
+                    with open("/home/pi/Hue/light/json/relaxed.json") as f:
                         on_command = json.load(f)
 
                 # Store the state that we just set this() light to
