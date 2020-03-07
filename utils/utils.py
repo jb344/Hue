@@ -20,5 +20,5 @@ def test_and_mkdir(directory) -> Exception or int:
 
         return SUCCESS
     except Exception as err:
-        return err.with_traceback()
+        raise RuntimeError(err)
 

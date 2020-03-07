@@ -37,7 +37,7 @@ def clean_up():
         motion_detected_thread.join()
 
     # Set exit code to 0, to tell the runner that we ended cleanly
-    exit(0)
+    exit(SUCCESS)
 
 
 if __name__ == "__main__":

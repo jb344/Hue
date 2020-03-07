@@ -45,10 +45,10 @@ class Logger:
             # Create a rotating file handler that rotates every 50MB, and stores only the last 5 logs, aka 250MB of data
             error_handler = RotatingFileHandler(
                 filename=LOGGING_PATH.joinpath(ERROR_LOG_FILE + "_{}.log".format(get_current_date_time())),
-                mode="w+", maxBytes=52430000, backupCount=5, encoding="ISO8859-1")
+                mode="w+", maxBytes=52428800, backupCount=5, encoding="ISO8859-1")
             standard_handler = RotatingFileHandler(
                 filename=LOGGING_PATH.joinpath(STANDARD_LOG_FILE + "_{}.log".format(get_current_date_time())),
-                mode="w+", maxBytes=52430000, backupCount=5, encoding="ISO8859-1")
+                mode="w+", maxBytes=52428800, backupCount=5, encoding="ISO8859-1")
 
             # Specify the format of the log files
             error_handler.setFormatter(LOG_FILE_FORMAT)

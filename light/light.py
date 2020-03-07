@@ -140,9 +140,6 @@ class Light:
                 http_result = urllib.request.urlopen(url=urllib.request.Request(url=resource_url, method='PUT'),
                                                      data=json.dumps(self.INITIAL_STATE.to_json()).encode()).read()
 
-                # Reset back to None to indicate there is no thread running anymore, and one should be created if needed
-                self.RESET_THREAD = None
-
                 if "success" in http_result.decode():
                     self.LOGGER.debug("{} was returned to its initial state {}".format(self.NAME, self.INITIAL_STATE.to_json()))
                 else:
@@ -156,9 +153,13 @@ class Light:
                 # Initial(OFF)      ->      Modified(RED)       ->      Current(OFF)        ->     DO NOTHING
                 self.LOGGER.debug("{} does not need any further action, as a third has put the light back to its initial state, so we don't have to".format(self.NAME))
 
+            # Reset back to None to indicate there is no thread running anymore, and one should be created if needed
+            self.RESET_THREAD = None
             return SUCCESS
         except Exception as err:
             self.LOGGER.exception(err)
+            # Reset back to None to indicate there is no thread running anymore, and one should be created if needed
+            self.RESET_THREAD = None
             return ERROR
 
     def get_reset_time(self) -> datetime:

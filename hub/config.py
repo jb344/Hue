@@ -25,7 +25,6 @@ RULES_URL = "/rules"
 
 # Accessory parameters
 STATE_URL = "/state"
-CONFIG_URL = "/config"
 
 # Unique names of all devices on my Hue hub
 MOTION_SENSOR_NAME = "Hallway motion sensor"

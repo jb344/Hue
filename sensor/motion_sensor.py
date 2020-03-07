@@ -72,8 +72,8 @@ class MotionSensor(Sensor):
                                 # and slowing the code down
                                 hour, minute, *_ = get_current_time(self.LOGGER)
 
-                                # If its 3AM then probe the rest of the details from the sensor
-                                if hour == 3 and minute == 0:
+                                # If its 5AM then probe the rest of the details from the sensor
+                                if hour == 5 and minute == 0:
                                     # Get configuration information
                                     sensor_config = sensor_fields.get("config")
                                     self.ON = sensor_config.get("on")
@@ -98,7 +98,6 @@ class MotionSensor(Sensor):
                                                       "\t\t\t\t\t\talert       {}\n".format(self.ALERT) +
                                                       "\t\t\t\t\t\tsensitivity {}\n".format(self.SENSITIVITY) +
                                                       "\t\t\t\t\t\tuid         {}".format(self.UNIQUE_ID))
-
                                 break
 
                         # If presence is detected then attempt to switch on all the necessary lights if they aren't already
@@ -115,16 +114,15 @@ class MotionSensor(Sensor):
                             for each_light in self.ALL_HALLWAY_LIGHTS:
                                 each_light.switch_on()
 
-                    # 100Hz refresh rate
-                    sleep(0.01)
+                    # 10Hz refresh rate
+                    sleep(0.1)
                 except URLError as err:
                     # Catch a 101 (Network is unreachable) and 113 (No route to host), because every night at 2AM the network goes down
-                    if URLError.errno == 101 or URLError.errno == 113:
+                    if err.errno == 101 or err.errno == 113:
                         sleep(60)
                         continue
-                    else:
-                        raise OSError(err)
-
+                except Exception as err:
+                    raise OSError(err)
             return SUCCESS
         except Exception as err:
             self.LOGGER.exception(err)
@@ -139,7 +137,6 @@ class MotionSensor(Sensor):
         """
         with self.THREAD_STATE_MUTEX:
             self.THREAD_STATE = state
-
         return SUCCESS
 
     def get_thread_state(self):

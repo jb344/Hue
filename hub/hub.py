@@ -45,7 +45,6 @@ class Hub:
                     raise RuntimeError("Ping returned error code {}".format(process_result.check_returncode()))
 
                 sleep(HUB_HEARTBEAT_INTERVAL_SECONDS)
-
         except Exception as err:
             self.LOGGER.exception(err)
             self.set_alive(False)
@@ -61,7 +60,6 @@ class Hub:
         # Acquire the mutex so we can set the hub alive flag
         with self.HUB_ALIVE_MUTEX:
             self.HUB_ALIVE = value
-
         return SUCCESS
 
     def get_alive(self) -> bool:
@@ -80,7 +78,6 @@ class Hub:
         """
         with self.THREAD_STATE_MUTEX:
             self.THREAD_STATE = state
-
         return SUCCESS
 
     def get_thread_state(self) -> int:
