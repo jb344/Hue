@@ -42,7 +42,7 @@ class Hub:
                     self.LOGGER.warning("Ping not received, attempting to continue anyway...")
                     self.set_alive(False)
                 else:
-                    raise RuntimeError("Ping returned error code {}".format(process_result.check_returncode()))
+                    raise RuntimeError("Ping returned error code {}".format(process_result.returncode))
 
                 sleep(HUB_HEARTBEAT_INTERVAL_SECONDS)
         except Exception as err:
