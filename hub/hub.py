@@ -38,11 +38,8 @@ class Hub:
                     self.set_alive(True)
                     self.LOGGER.debug("Ping received")
                 # The transmission was successful but no responses were received
-                elif process_result.returncode == 2:
-                    self.LOGGER.warning("Ping not received, attempting to continue anyway...")
-                    self.set_alive(False)
                 else:
-                    raise RuntimeError("Ping returned error code {}".format(process_result.returncode))
+                    self.LOGGER.warning("Ping not received, attempting to continue anyway...")
 
                 sleep(HUB_HEARTBEAT_INTERVAL_SECONDS)
         except Exception as err:
