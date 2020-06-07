@@ -30,8 +30,9 @@ class MotionSensor(Sensor):
 
         # Lounge lights
         self.HUE_PLAY = Light(name=HUE_PLAY, logger=logger)
+        self.HUE_PLAY_BOOKCASE = Light(name=HUE_PLAY_BOOKCASE, logger=logger)
         self.LOUNGE_LAMP = Light(name=LIVING_ROOM_LAMP, logger=logger)
-        self.ALL_LOUNGE_LIGHTS = [self.HUE_PLAY, self.LOUNGE_LAMP]
+        self.ALL_LOUNGE_LIGHTS = [self.HUE_PLAY, self.HUE_PLAY_BOOKCASE, self.LOUNGE_LAMP]
 
         # Hallway lights
         self.HALLWAY_SPOT_ONE = Light(name=HALLWAY_SPOT_ONE, logger=logger)
