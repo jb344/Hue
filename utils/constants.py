@@ -19,3 +19,8 @@ LOGGING_PATH = __Path("/home/pi/Hue/logs")
 ERROR_LOG_FILE = "JB_HUE_ERROR"
 STANDARD_LOG_FILE = "JB_HUE"
 LOG_FILE_FORMAT = __logging.Formatter("%(asctime)s, %(levelname)s, %(module)s.%(funcName)s()->%(lineno)d,       %(message)s")
+
+# Number of days in a week
+DAYS_IN_WEEK = 7
+# Check the the season every Monday
+DAY_OF_WEEK_TO_CHECK_SEASON = 1

@@ -20,6 +20,10 @@ class Light:
                 :param name:        Name of the light to get, such as "Living room lamp"
                 :param logger:      Logger to log to
         """
+        self.DAY_OF_WEEK = None                     # Current day of the week (e.g. Monday = 1)
+        self.DAYTIME_HOUR = None                    # Hour which daytime starts
+        self.NIGHT_HOUR = None                      # Hour which night starts
+        self.EVENING_HOUR = None                    # Hour which evening starts
         self.CURRENT_STATE = None                   # LightState class object, containing the current state of the light
         self.INITIAL_STATE = None                   # LightState class object, containing the state of the light as we "found" it, so we can return to this if necessary
         self.MODIFIED_STATE = None                  # LightState class object, containing the state of the light as we have set it
@@ -64,6 +68,14 @@ class Light:
                 :return:        -1 on FAILURE, 0 on SUCCESS
         """
         try:
+            # What day of the week is it
+            self.DAY_OF_WEEK = datetime.now().day % DAYS_IN_WEEK
+
+            # If its the day of week that we want to check the season, or we haven't checked yet
+            if self.DAY_OF_WEEK == DAY_OF_WEEK_TO_CHECK_SEASON or self.DAYTIME_HOUR is None:
+                # Set the light boundaries, we should probably only do this on a weekly basis
+                self.set_light_colour_time_boundaries()
+
             # Get the current state information so we can return to this after a defined time interval
             self.CURRENT_STATE = LightState(logger=self.LOGGER, light_name=self.NAME)
 
@@ -74,16 +86,16 @@ class Light:
                 # Based on the current time, decide which colour we want the lights
                 hour, minute, second = get_current_time()
 
-                # Between 10PM and 5AM we want a dimmed light
-                if hour >= 22 or hour < 5:
+                # At night we want a dimmed light
+                if hour in self.NIGHT_HOUR:
                     with open("/home/pi/Hue/light/json/dimmed.json") as f:
                         on_command = json.load(f)
-                # Between 5AM and 5PM we want a bright white
-                elif 5 <= hour < 17:
+                # In the day time we want bright light
+                elif hour in self.DAYTIME_HOUR:
                     with open("/home/pi/Hue/light/json/energise.json") as f:
                         on_command = json.load(f)
-                # Between 5PM and 10PM we want a nice relaxing orange
-                elif 17 <= hour < 22:
+                # In the evening we want a relaxed colour
+                elif hour in self.EVENING_HOUR:
                     with open("/home/pi/Hue/light/json/relaxed.json") as f:
                         on_command = json.load(f)
 
@@ -177,3 +189,38 @@ class Light:
         """
         with self.RESET_TIME_MUTEX:
             self.RESET_TIME = current_time + timedelta(minutes=STAY_ON_FOR_X_MINUTES)
+
+    def set_light_colour_time_boundaries(self):
+        """
+            Determine the boundaries of what colour light we want at what time
+            dependant on the current season/month
+                :return:        -1 on FAILURE, 0 on SUCCESS
+        """
+        winter_months = [12, 1, 2]          # Dec, Jan, Feb
+        spring_months = [3, 4, 5]           # Mar, Apr, May
+        summer_months = [6, 7, 8]           # Jun, Jul, Aug
+        autumn_months = [9, 10, 11]         # Sep, Oct, Nov
+
+        # Get the current month of the year
+        month = datetime.now().month
+
+        # Winter has the shortest daylight hours...
+        if month in winter_months:
+            self.DAYTIME_HOUR = [8, 9, 10, 11, 12, 13, 14, 15, 16]
+            self.EVENING_HOUR = [17, 18, 19, 20, 21, 22]
+            self.NIGHT_HOUR = [23, 0, 1, 2, 3, 4, 5, 6, 7]
+        elif month in spring_months:
+            self.DAYTIME_HOUR = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+            self.EVENING_HOUR = [19, 20, 21]
+            self.NIGHT_HOUR = [22, 23, 0, 1, 2, 3, 4, 5]
+        # Summer has the longest daylight hours...
+        elif month in summer_months:
+            self.DAYTIME_HOUR = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+            self.EVENING_HOUR = [20, 21, 22]
+            self.NIGHT_HOUR = [23, 0, 1, 2, 3]
+        elif month in autumn_months:
+            self.DAYTIME_HOUR = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+            self.EVENING_HOUR = [18, 19, 20, 21]
+            self.NIGHT_HOUR = [22, 23, 0, 1, 2, 3, 4]
+
+        return 0
