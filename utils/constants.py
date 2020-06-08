@@ -24,3 +24,9 @@ LOG_FILE_FORMAT = __logging.Formatter("%(asctime)s, %(levelname)s, %(module)s.%(
 DAYS_IN_WEEK = 7
 # Check the the season every Monday
 DAY_OF_WEEK_TO_CHECK_SEASON = 1
+
+# Seasons determined by their months
+WINTER_MONTHS = [12, 1, 2]          # Dec, Jan, Feb
+SPRING_MONTHS = [3, 4, 5]           # Mar, Apr, May
+SUMMER_MONTHS = [6, 7, 8]           # Jun, Jul, Aug
+AUTUMN_MONTHS = [9, 10, 11]         # Sep, Oct, Nov

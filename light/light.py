@@ -10,7 +10,7 @@ from time import sleep
 from hub.config import *
 from utils.constants import *
 from light.state import LightState
-from utils.time import get_current_time
+from utils.time import *
 
 
 class Light:
@@ -69,7 +69,7 @@ class Light:
         """
         try:
             # What day of the week is it
-            self.DAY_OF_WEEK = datetime.now().day % DAYS_IN_WEEK
+            self.DAY_OF_WEEK = get_current_weekday()
 
             # If its the day of week that we want to check the season, or we haven't checked yet
             if self.DAY_OF_WEEK == DAY_OF_WEEK_TO_CHECK_SEASON or self.DAYTIME_HOUR is None:
@@ -84,7 +84,7 @@ class Light:
                 self.INITIAL_STATE = self.CURRENT_STATE
 
                 # Based on the current time, decide which colour we want the lights
-                hour, minute, second = get_current_time()
+                hour = get_current_hour()
 
                 # At night we want a dimmed light
                 if hour in self.NIGHT_HOUR:
@@ -190,35 +190,30 @@ class Light:
         with self.RESET_TIME_MUTEX:
             self.RESET_TIME = current_time + timedelta(minutes=STAY_ON_FOR_X_MINUTES)
 
-    def set_light_colour_time_boundaries(self):
+    def set_light_colour_time_boundaries(self) -> int:
         """
             Determine the boundaries of what colour light we want at what time
             dependant on the current season/month
                 :return:        -1 on FAILURE, 0 on SUCCESS
         """
-        winter_months = [12, 1, 2]          # Dec, Jan, Feb
-        spring_months = [3, 4, 5]           # Mar, Apr, May
-        summer_months = [6, 7, 8]           # Jun, Jul, Aug
-        autumn_months = [9, 10, 11]         # Sep, Oct, Nov
-
         # Get the current month of the year
-        month = datetime.now().month
+        month = get_current_month()
 
         # Winter has the shortest daylight hours...
-        if month in winter_months:
+        if month in WINTER_MONTHS:
             self.DAYTIME_HOUR = [8, 9, 10, 11, 12, 13, 14, 15, 16]
             self.EVENING_HOUR = [17, 18, 19, 20, 21, 22]
             self.NIGHT_HOUR = [23, 0, 1, 2, 3, 4, 5, 6, 7]
-        elif month in spring_months:
+        elif month in SPRING_MONTHS:
             self.DAYTIME_HOUR = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
             self.EVENING_HOUR = [19, 20, 21]
             self.NIGHT_HOUR = [22, 23, 0, 1, 2, 3, 4, 5]
         # Summer has the longest daylight hours...
-        elif month in summer_months:
+        elif month in SUMMER_MONTHS:
             self.DAYTIME_HOUR = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
             self.EVENING_HOUR = [20, 21, 22]
             self.NIGHT_HOUR = [23, 0, 1, 2, 3]
-        elif month in autumn_months:
+        elif month in AUTUMN_MONTHS:
             self.DAYTIME_HOUR = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
             self.EVENING_HOUR = [18, 19, 20, 21]
             self.NIGHT_HOUR = [22, 23, 0, 1, 2, 3, 4]

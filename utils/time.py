@@ -52,3 +52,33 @@ def get_current_hour(logger=None) -> int:
             logger.exception(err)
         else:
             print(err)
+
+
+def get_current_weekday(logger=None) -> int:
+    """
+            Get the current weekday
+                :param logger:      Logger to log to
+                :return:            weekday as a 1-7 int (1 = Monday, 7 = Sunday)
+        """
+    try:
+        return datetime.datetime.today().isoweekday()
+    except Exception as err:
+        if logger is not None and logger != ERROR:
+            logger.exception(err)
+        else:
+            print(err)
+
+
+def get_current_month(logger=None) -> int:
+    """
+            Get the current month
+                :param logger:      Logger to log to
+                :return:            month as a 1-12 int
+        """
+    try:
+        return datetime.datetime.now().month
+    except Exception as err:
+        if logger is not None and logger != ERROR:
+            logger.exception(err)
+        else:
+            print(err)
