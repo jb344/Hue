@@ -14,10 +14,10 @@ IRRECOVERABLE = -1
 # Thread behaviour
 KILL = -1
 
-# Logging specific crap
+# Logging specific
 LOGGING_PATH = __Path("/home/pi/Hue/logs")
-ERROR_LOG_FILE = "JB_HUE_ERROR"
-STANDARD_LOG_FILE = "JB_HUE"
+ERROR_LOG_FILE = "HUE_ERROR"
+STANDARD_LOG_FILE = "HUE"
 LOG_FILE_FORMAT = __logging.Formatter("%(asctime)s, %(levelname)s, %(module)s.%(funcName)s()->%(lineno)d,       %(message)s")
 
 # Number of days in a week
@@ -28,5 +28,5 @@ DAY_OF_WEEK_TO_CHECK_SEASON = 1
 # Seasons determined by their months
 WINTER_MONTHS = [12, 1, 2]          # Dec, Jan, Feb
 SPRING_MONTHS = [3, 4, 5]           # Mar, Apr, May
-SUMMER_MONTHS = [6, 7, 8]           # Jun, Jul, Aug
-AUTUMN_MONTHS = [9, 10, 11]         # Sep, Oct, Nov
+SUMMER_MONTHS = [6, 7, 8, 9]        # Jun, Jul, Aug, Sep
+AUTUMN_MONTHS = [10, 11]            # Oct, Nov

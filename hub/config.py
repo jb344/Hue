@@ -1,4 +1,4 @@
-# IP address of my Hue hub on the local network
+# IP address of Hue hub on the local network
 HUE_HUB_IP = "192.168.1.27"
 # Username of the privileged user we generated on the hub
 HUE_HUB_USERNAME = "mqWIXtAw754p0v7YrkxGcLSwGCtL2dNhFCdBZRTo"
