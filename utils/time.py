@@ -21,7 +21,7 @@ def get_current_date_time(logger=None) -> str:
     return now
 
 
-def get_current_time(logger=None) -> tuple:
+def get_current_hour_min_sec(logger=None) -> tuple:
     """
         Get the current time
             :param logger:      Logger to log to

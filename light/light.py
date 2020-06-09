@@ -8,7 +8,6 @@ from time import sleep
 
 # Defined by me
 from hub.config import *
-from utils.constants import *
 from light.state import LightState
 from utils.time import *
 
@@ -111,7 +110,7 @@ class Light:
 
                 # Check the returned json confirms success on our request
                 if "success" in http_result.decode():
-                    self.LAST_ON_TIME = datetime.now()
+                    self.LAST_ON_TIME = datetime.datetime.now()
                     self.set_reset_time(self.LAST_ON_TIME)
 
                     # If we haven't already got a reset thread running for this() light, then start one, so after hub.config.STAY_ON_FOR_X_MINUTES minutes this() light will be reset
@@ -135,9 +134,9 @@ class Light:
         """
         try:
             # While the current time is less than that we need to reset this() light at, then we should sleep and wait for it to be True
-            delta = self.get_reset_time() - datetime.now()
+            delta = self.get_reset_time() - datetime.datetime.now()
             while delta.seconds > 0:
-                delta = self.get_reset_time() - datetime.now()
+                delta = self.get_reset_time() - datetime.datetime.now()
                 sleep(1)
 
             # Get the current state information so we can make a guess at whether it was the motion sensor that recently changed the status, or whether it was something else,

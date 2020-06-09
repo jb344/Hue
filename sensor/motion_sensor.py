@@ -11,7 +11,7 @@ from utils.constants import *
 from hub.hub import Hub
 from sensor.sensor import Sensor
 from light.light import Light
-from utils.time import get_current_time
+from utils.time import get_current_hour_min_sec
 
 
 class MotionSensor(Sensor):
@@ -71,7 +71,7 @@ class MotionSensor(Sensor):
 
                                 # Get the current time, so if it's 3AM we get the rest of the sensor information, rather doing it every iteration
                                 # and slowing the code down
-                                hour, minute, *_ = get_current_time(self.LOGGER)
+                                hour, minute, *_ = get_current_hour_min_sec(self.LOGGER)
 
                                 # If its 5AM then probe the rest of the details from the sensor
                                 if hour == 5 and minute == 0:
