@@ -12,7 +12,7 @@ No additional libraries are needed. The code just simply requires Python 3
 
 To get started;
 
-Setup a privileged Hue Hub user using this method; https://developers.meethue.com/develop/get-started-2/
-Check your Hue Hub IP address (default is 192.168.1.27) and change the HUE_HUB_IP field in hub->config.py
-Adjust LOGGING_PATH in utils->constants.py
-Run using "python3 main.py"
+1. Setup a privileged Hue Hub user using this method; https://developers.meethue.com/develop/get-started-2/
+2. Check your Hue Hub IP address (default is 192.168.1.27) and change the HUE_HUB_IP field in hub->config.py
+3. Adjust LOGGING_PATH in utils->constants.py
+4. Run using "python3 main.py"
