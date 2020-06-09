@@ -4,7 +4,7 @@ import os
 from .constants import *
 
 
-def test_and_mkdir(directory):
+def test_and_mkdir(directory) -> Exception or int:
     """
         Test if a directory exists, if not, make it
             :param directory:       Directory to test/make
@@ -20,5 +20,5 @@ def test_and_mkdir(directory):
 
         return SUCCESS
     except Exception as err:
-        return err.with_traceback()
+        raise RuntimeError(err)
 

@@ -1,4 +1,4 @@
-# IP address of my Hue hub on the local network
+# IP address of Hue hub on the local network
 HUE_HUB_IP = "192.168.1.27"
 # Username of the privileged user we generated on the hub
 HUE_HUB_USERNAME = "mqWIXtAw754p0v7YrkxGcLSwGCtL2dNhFCdBZRTo"
@@ -8,7 +8,7 @@ HUE_HUB_LANDING = "http://" + HUE_HUB_IP + "/api"
 # The base useful URL, from here is where we can reach light, sensors etc...
 HUE_HUB_BASE_URL = HUE_HUB_LANDING + "/" + HUE_HUB_USERNAME
 
-# How often we should ping the hub, in second
+# How often we should ping the hub, in seconds
 HUB_HEARTBEAT_INTERVAL_SECONDS = 120
 
 # Time period the lights should stay on for after the motion sensor is triggered
@@ -25,12 +25,12 @@ RULES_URL = "/rules"
 
 # Accessory parameters
 STATE_URL = "/state"
-CONFIG_URL = "/config"
 
 # Unique names of all devices on my Hue hub
 MOTION_SENSOR_NAME = "Hallway motion sensor"
 LIVING_ROOM_LAMP = "Living room lamp"
 HUE_PLAY = "Hue play"
+HUE_PLAY_BOOKCASE = "Hue play bookcase"
 BEDROOM_LAMP = "Bedroom lamp"
 HALLWAY_SPOT_ONE = "Hallway spot 1"
 HALLWAY_SPOT_TWO = "Hallway spot 2"
