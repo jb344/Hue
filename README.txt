@@ -15,4 +15,5 @@ To get started;
 1. Setup a privileged Hue Hub user using this method; https://developers.meethue.com/develop/get-started-2/
 2. Check your Hue Hub IP address (default is 192.168.1.27) and change the HUE_HUB_IP field in hub->config.py
 3. Adjust LOGGING_PATH in utils->constants.py
-4. Run using "python3 main.py"
+4. Update the months depending on your hemisphere in utils->constants.py
+5. Run using "python3 main.py"
