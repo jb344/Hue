@@ -121,6 +121,12 @@ class Light:
                     return SUCCESS
                 else:
                     raise RuntimeError("Error switching on light using command {}".format(on_command))
+            else:
+                # The light is currently switched on, and we have triggered the motion sensor, so check if a reset thread exists for the light, if it does then extend the reset time
+                if self.RESET_THREAD is not None:
+                    self.set_reset_time(datetime.datetime.now())
+                    self.LOGGER.info("{} was already switched on at {} when the motion sensor was re-triggered, extending the reversion to previous state by {} minutes - "
+                                     "reverting to previous state at {}, thread handling this {}".format(self.NAME, self.LAST_ON_TIME, STAY_ON_FOR_X_MINUTES, self.get_reset_time(), self.RESET_THREAD.getName()))
         except Exception as err:
             self.LOGGER.exception(err)
             return ERROR
@@ -217,4 +223,4 @@ class Light:
             self.EVENING_HOUR = [18, 19, 20, 21]
             self.NIGHT_HOUR = [22, 23, 0, 1, 2, 3, 4]
 
-        return 0
+        return SUCCESS
