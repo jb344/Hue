@@ -10,38 +10,24 @@ from hub.config import *
 from utils.constants import *
 from hub.hub import Hub
 from sensor.sensor import Sensor
-from light.light import Light
 from utils.time import get_current_hour_min_sec
 
 
 class MotionSensor(Sensor):
-    def __init__(self, logger, motion_sensor_name: str, connected_to_hub: Hub):
+    def __init__(self, logger, motion_sensor_name: str, connected_to_hub: Hub, lights: list):
         """
             Constructor of a MotionSensor, which inherits from a Sensor
                 :param logger:                  Logger to log to
                 :param motion_sensor_name:      Name of the motion sensor we are interested in
                 :param connected_to_hub:        hub.Hub class object that the desired MotionSensor is connected to
+                :param lights:                  List of lights we want to this motion sensor to be in charge of
         """
         self.LOGGER = logger                            # Logger object
         self.THREAD_STATE = RECOVERABLE                 # State flag of this thread, either RUNNING, RECOVERABLE, or IRRECOVERABLE
         self.THREAD_STATE_MUTEX = threading.Lock()      # Mutex protecting the above flag
         self.MOTION_SENSOR_NAME = motion_sensor_name    # Name of the motion sensor we are looking to interrogate
         self.HUB = connected_to_hub                     # The Hue hub object that the sensor is connected to
-
-        # Lounge lights
-        self.HUE_PLAY = Light(name=HUE_PLAY, logger=logger)
-        self.HUE_PLAY_BOOKCASE = Light(name=HUE_PLAY_BOOKCASE, logger=logger)
-        self.LOUNGE_LAMP = Light(name=LIVING_ROOM_LAMP, logger=logger)
-        self.ALL_LOUNGE_LIGHTS = [self.HUE_PLAY, self.HUE_PLAY_BOOKCASE, self.LOUNGE_LAMP]
-
-        # Hallway lights
-        self.HALLWAY_SPOT_ONE = Light(name=HALLWAY_SPOT_ONE, logger=logger)
-        self.HALLWAY_SPOT_TWO = Light(name=HALLWAY_SPOT_TWO, logger=logger)
-        self.ALL_HALLWAY_LIGHTS = [self.HALLWAY_SPOT_ONE, self.HALLWAY_SPOT_TWO]
-
-        # Bedroom lights
-        self.BEDROOM_LAMP = Light(name=BEDROOM_LAMP, logger=logger)
-        self.ALL_BEDROOM_LIGHTS = []
+        self.LIGHTS = lights                            # The list of lights we should use
 
     def interrogate(self) -> int:
         """
@@ -103,16 +89,8 @@ class MotionSensor(Sensor):
 
                         # If presence is detected then attempt to switch on all the necessary lights if they aren't already
                         if self.PRESENCE:
-                            # Iterate over the bedroom lights and if they aren't on, switch them on
-                            for each_light in self.ALL_BEDROOM_LIGHTS:
-                                each_light.switch_on()
-
-                            # Iterate over the lounge lights and if they aren't on, switch them on
-                            for each_light in self.ALL_LOUNGE_LIGHTS:
-                                each_light.switch_on()
-
-                            # Iterate over the hallway lights and if they aren't on, switch them on
-                            for each_light in self.ALL_HALLWAY_LIGHTS:
+                            # Iterate over all of the lights and if they aren't on, switch them on
+                            for each_light in self.LIGHTS:
                                 each_light.switch_on()
 
                     # 10Hz refresh rate

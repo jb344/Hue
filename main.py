@@ -9,7 +9,7 @@ from hub.config import *
 from utils.logger import Logger
 from hub.hub import Hub
 from sensor.motion_sensor import MotionSensor
-
+from light.light import Light
 
 class Killer:
     kill = False
@@ -32,9 +32,9 @@ def clean_up():
         hub.kill_thread()
         hub_heartbeat_thread.join()
 
-    if motion_detected_thread.is_alive():
-        motion_sensor.kill_thread()
-        motion_detected_thread.join()
+    if hallway_motion_detected_thread.is_alive():
+        hallway_motion_sensor.kill_thread()
+        hallway_motion_detected_thread.join()
 
     # Set exit code to 0, to tell the runner that we ended cleanly
     exit(SUCCESS)
@@ -58,17 +58,33 @@ if __name__ == "__main__":
         else:
             raise RuntimeError("Failed creating logs...")
 
+        # Grouping of the lights the hallway motion sensor controls
+        HALLWAY_MOTION_SENSOR_LIGHTS = [Light(name=HUE_PLAY_TV, logger=log),
+                                        Light(name=HUE_PLAY_BOOKCASE, logger=log),
+                                        Light(name=LIVING_ROOM_LAMP, logger=log),
+                                        Light(name=HALLWAY_SPOT_ONE, logger=log),
+                                        Light(name=HALLWAY_SPOT_TWO, logger=log)]
+
+        # Grouping of the lights the kitchen motion sensor controls
+        KITCHEN_MOTION_SENSOR_LIGHTS = [Light(name=KITCHEN_COUNTER_SPOT, logger=log),
+                                        Light(name=KITCHEN_SINK_SPOT, logger=log)]
+
         # Create the Hub and Motion Sensor objects we need, from the config file values
         hub = Hub(logger=log, found_at_ip=HUE_HUB_IP)
-        motion_sensor = MotionSensor(logger=log, motion_sensor_name=MOTION_SENSOR_NAME, connected_to_hub=hub)
+        hallway_motion_sensor = MotionSensor(logger=log, motion_sensor_name=HALLWAY_MOTION_SENSOR, connected_to_hub=hub, lights=HALLWAY_MOTION_SENSOR_LIGHTS)
+        kitchen_motion_sensor = MotionSensor(logger=log, motion_sensor_name=KITCHEN_MOTION_SENSOR, connected_to_hub=hub, lights=KITCHEN_MOTION_SENSOR_LIGHTS)
 
         # Start a thread to ping the Hue hub, if these pings stop working, then perhaps the hub has gone down?
         hub_heartbeat_thread = Thread(name="hub_heartbeat_thread", target=hub.heartbeat)
         hub_heartbeat_thread.start()
 
-        # Start a thread to constantly probe the motion sensor for activity
-        motion_detected_thread = Thread(name="motion_detected_thread", target=motion_sensor.interrogate)
-        motion_detected_thread.start()
+        # Start a thread to constantly probe the hallway motion sensor for activity
+        hallway_motion_detected_thread = Thread(name="hallway_motion_detected_thread", target=hallway_motion_sensor.interrogate)
+        hallway_motion_detected_thread.start()
+
+        # Start a thread to constantly probe the kitchen motion sensor for activity
+        kitchen_motion_detected_thread = Thread(name="kitchen_motion_detected_thread", target=kitchen_motion_sensor.interrogate)
+        kitchen_motion_detected_thread.start()
 
         # Allow the other threads to spawn
         time.sleep(10)
@@ -87,15 +103,26 @@ if __name__ == "__main__":
                 hub_heartbeat_thread.start()
 
             # If its recoverable then try to re launch it
-            if motion_sensor.get_thread_state() == RECOVERABLE:
+            if hallway_motion_sensor.get_thread_state() == RECOVERABLE:
                 # If its still alive then kill it
-                if motion_detected_thread.is_alive():
-                    motion_sensor.kill_thread()
-                    motion_detected_thread.join()
+                if hallway_motion_detected_thread.is_alive():
+                    hallway_motion_sensor.kill_thread()
+                    hallway_motion_detected_thread.join()
 
                 # Restart it
-                motion_detected_thread = Thread(name="motion_detected_thread", target=motion_sensor.interrogate)
-                motion_detected_thread.start()
+                hallway_motion_detected_thread = Thread(name="hallway_motion_detected_thread", target=hallway_motion_sensor.interrogate)
+                hallway_motion_detected_thread.start()
+
+            # If its recoverable then try to re launch it
+            if kitchen_motion_sensor.get_thread_state() == RECOVERABLE:
+                # If its still alive then kill it
+                if kitchen_motion_detected_thread.is_alive():
+                    kitchen_motion_sensor.kill_thread()
+                    kitchen_motion_detected_thread.join()
+
+                # Restart it
+                kitchen_motion_detected_thread = Thread(name="kitchen_motion_detected_thread", target=kitchen_motion_sensor.interrogate)
+                kitchen_motion_detected_thread.start()
 
             time.sleep(10)
 
