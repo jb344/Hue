@@ -89,10 +89,12 @@ class Light:
                 if hour in self.NIGHT_HOUR:
                     with open("/home/pi/Hue/light/json/dimmed.json") as f:
                         on_command = json.load(f)
-                # In the day time we want bright light
+                # In the day time we want bright light - do nothing for now
                 elif hour in self.DAYTIME_HOUR:
-                    with open("/home/pi/Hue/light/json/energise.json") as f:
-                        on_command = json.load(f)
+                    # with open("/home/pi/Hue/light/json/energise.json") as f:
+                    #     on_command = json.load(f)
+                    # Do nothing during daytime for now
+                    return SUCCESS
                 # In the evening we want a relaxed colour
                 elif hour in self.EVENING_HOUR:
                     with open("/home/pi/Hue/light/json/relaxed.json") as f:
