@@ -208,8 +208,8 @@ class Light:
 
         # Winter has the shortest daylight hours...
         if month in WINTER_MONTHS:
-            self.DAYTIME_HOUR = [8, 9, 10, 11, 12, 13, 14, 15, 16]
-            self.EVENING_HOUR = [17, 18, 19, 20, 21, 22]
+            self.DAYTIME_HOUR = [8, 9, 10, 11, 12, 13, 14, 15]
+            self.EVENING_HOUR = [16, 17, 18, 19, 20, 21, 22]
             self.NIGHT_HOUR = [23, 0, 1, 2, 3, 4, 5, 6, 7]
         elif month in SPRING_MONTHS:
             self.DAYTIME_HOUR = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
@@ -221,8 +221,8 @@ class Light:
             self.EVENING_HOUR = [20, 21, 22]
             self.NIGHT_HOUR = [23, 0, 1, 2, 3]
         elif month in AUTUMN_MONTHS:
-            self.DAYTIME_HOUR = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
-            self.EVENING_HOUR = [18, 19, 20, 21]
-            self.NIGHT_HOUR = [22, 23, 0, 1, 2, 3, 4]
+            self.DAYTIME_HOUR = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            self.EVENING_HOUR = [16, 17, 18, 19, 20, 21, 22]
+            self.NIGHT_HOUR = [23, 0, 1, 2, 3, 4]
 
         return SUCCESS
