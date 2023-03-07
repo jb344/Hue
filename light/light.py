@@ -212,13 +212,13 @@ class Light:
             self.EVENING_HOUR = [14, 15, 16, 17, 18, 19, 20, 21, 22]
             self.NIGHT_HOUR = [23, 0, 1, 2, 3, 4, 5, 6, 7]
         elif month in SPRING_MONTHS:
-            self.DAYTIME_HOUR = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
-            self.EVENING_HOUR = [19, 20, 21]
-            self.NIGHT_HOUR = [22, 23, 0, 1, 2, 3, 4, 5]
+            self.DAYTIME_HOUR = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            self.EVENING_HOUR = [16, 17, 18, 19, 20, 21, 22]
+            self.NIGHT_HOUR = [23, 0, 1, 2, 3, 4, 5]
         # Summer has the longest daylight hours...
         elif month in SUMMER_MONTHS:
-            self.DAYTIME_HOUR = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-            self.EVENING_HOUR = [20, 21, 22]
+            self.DAYTIME_HOUR = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+            self.EVENING_HOUR = [19, 20, 21, 22]
             self.NIGHT_HOUR = [23, 0, 1, 2, 3]
         elif month in AUTUMN_MONTHS:
             self.DAYTIME_HOUR = [7, 8, 9, 10, 11, 12, 13, 14]
